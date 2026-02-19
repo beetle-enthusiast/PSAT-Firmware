@@ -17,8 +17,7 @@ typedef enum i2c_state_enum {
 
 
 void init_I2C();
-// void I2C_switchDevice(uint8_t dev_addr);
-uint8_t I2C_transmit(uint8_t dev_addr, uint8_t reg_addr, uint8_t *data);
+uint8_t I2C_transmitByte(uint8_t dev_addr, uint8_t *data);
 uint8_t I2C_writeReg(uint8_t dev_addr, uint8_t reg_addr, uint8_t *data, uint8_t len);
 
 #endif
