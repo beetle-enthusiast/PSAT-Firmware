@@ -95,10 +95,23 @@
                             </tool>
                         </toolChain>
                     </folderInfo>
+                    <fileInfo id="com.ti.ccstudio.buildDefinitions.MSP430.Debug.1925295727.main.c" name="main.c" rcbsApplicability="disable" resourcePath="main.c" toolsToInvoke="com.ti.ccstudio.buildDefinitions.MSP430_21.6.exe.compilerDebug.767857796.2106148931">
+                        <tool id="com.ti.ccstudio.buildDefinitions.MSP430_21.6.exe.compilerDebug.767857796.2106148931" name="MSP430 Compiler" superClass="com.ti.ccstudio.buildDefinitions.MSP430_21.6.exe.compilerDebug.767857796">
+                            <option id="com.ti.ccstudio.buildDefinitions.MSP430_21.6.compilerID.INCLUDE_PATH.507859464" superClass="com.ti.ccstudio.buildDefinitions.MSP430_21.6.compilerID.INCLUDE_PATH" valueType="includePath">
+                                <listOptionValue value="${CCS_BASE_ROOT}/msp430/include"/>
+                                <listOptionValue value="${PROJECT_ROOT}"/>
+                                <listOptionValue value="${PROJECT_ROOT}/peripherals"/>
+                                <listOptionValue value="${PROJECT_ROOT}/driverlib/MSP430FR2xx_4xx"/>
+                                <listOptionValue value="${CG_TOOL_ROOT}/include"/>
+                                <listOptionValue value="${PROJECT_ROOT}/bmp390_lib"/>
+                            </option>
+                        </tool>
+                    </fileInfo>
                     <folderInfo id="com.ti.ccstudio.buildDefinitions.MSP430.Debug.1925295727.driverlib/MSP430FR2xx_4xx" name="MSP430FR2xx_4xx" resourcePath="driverlib/MSP430FR2xx_4xx">
                         <toolChain id="com.ti.ccstudio.buildDefinitions.MSP430_21.6.exe.DebugToolchain.1804646976" name="TI Build Tools" superClass="com.ti.ccstudio.buildDefinitions.MSP430_21.6.exe.DebugToolchain" unusedChildren="">
                             <option id="com.ti.ccstudio.buildDefinitions.core.OPT_TAGS.846963047.496099688" superClass="com.ti.ccstudio.buildDefinitions.core.OPT_TAGS.846963047"/>
                             <option id="com.ti.ccstudio.buildDefinitions.core.OPT_CODEGEN_VERSION.56055782.1020896721" name="Compiler version" superClass="com.ti.ccstudio.buildDefinitions.core.OPT_CODEGEN_VERSION.56055782"/>
+                            <targetPlatform id="com.ti.ccstudio.buildDefinitions.MSP430_21.6.exe.targetPlatformDebug" name="Platform" superClass="com.ti.ccstudio.buildDefinitions.MSP430_21.6.exe.targetPlatformDebug"/>
                             <tool id="com.ti.ccstudio.buildDefinitions.MSP430_21.6.exe.compilerDebug.1804987725" name="MSP430 Compiler" superClass="com.ti.ccstudio.buildDefinitions.MSP430_21.6.exe.compilerDebug.767857796">
                                 <option id="com.ti.ccstudio.buildDefinitions.MSP430_21.6.compilerID.INCLUDE_PATH.304171286" superClass="com.ti.ccstudio.buildDefinitions.MSP430_21.6.compilerID.INCLUDE_PATH" valueType="includePath">
                                     <listOptionValue value="${CCS_BASE_ROOT}/msp430/include"/>

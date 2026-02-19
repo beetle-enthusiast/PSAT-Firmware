@@ -1,5 +1,7 @@
 
 #include <driverlib.h>
+#include <i2c.h>
+
 #include <stdint.h>
 #include <stdlib.h>
 
@@ -10,6 +12,8 @@
 #elif defined(__IAR_SYSTEMS_ICC__)
 __persistent
 #endif
+
+uint8_t txBuffer[16] = {0xEE};
 
 /* Function Declarations */
 void init_GPIO();
@@ -28,9 +32,13 @@ int main() {
     init_CS();
     init_I2C();
     // init_UART();
-    
-    while(1) {
-    
+    __bis_SR_register(GIE); // General interrupt enable
+
+    uint8_t i = 0;    
+    while(i < 16) {
+        I2C_transmit(0x76, 0x00, txBuffer);
+        __delay_cycles(800000UL * 1000);
+        i++;
     }
 }
 
@@ -49,9 +57,8 @@ void init_GPIO() {
     GPIO_setOutputLowOnPin(GPIO_PORT_PD, GPIO_PIN_ALL16);
     GPIO_setOutputLowOnPin(GPIO_PORT_PE, GPIO_PIN_ALL16);
 
-    //Set P2.3 (S3) to input
-    // GPIO_setAsInputPinWithPullUpResistor(GPIO_PORT_P2, GPIO_PIN3);
-    // GPIO_selectInterruptEdge(GPIO_PORT_P2, GPIO_PIN3, GPIO_HIGH_TO_LOW_TRANSITION);
+    // Configure eUSCIB0 for I2C
+    P1SEL0 |= (1<<2)|(1<<3);    // P1.2 -> SDA, P1.3 -> SCL
 }
 
 
@@ -71,12 +78,6 @@ void init_CS() {
 
     CSCTL4 = SELMS__DCOCLKDIV | SELA__REFOCLK;   // set REF0CLK (~32768Hz) as ACLK source, ACLK = 32768Hz
                                                  // default DCOCLKDIV as MCLK and SMCLK source
-}
-
-
-// Initialise I2C
-void init_I2C() {
-
 }
 
 
