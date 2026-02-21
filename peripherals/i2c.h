@@ -10,11 +10,8 @@ extern uint8_t ReceiveBuffer[MAX_BUFFER_SIZE];
 extern uint8_t TransmitBuffer[MAX_BUFFER_SIZE];
 
 
-//******************************************************************************
-// General I2C State Machine ***************************************************
-//******************************************************************************
-
-typedef enum I2C_ModeEnum{
+/* I2C State Machine */
+typedef enum i2c_statusEnum{
     IDLE_MODE,
     NACK_MODE,
     TX_REG_ADDRESS_MODE,
@@ -24,10 +21,10 @@ typedef enum I2C_ModeEnum{
     SWITCH_TO_RX_MODE,
     SWITCH_TO_TX_MODE,
     TIMEOUT_MODE
-} I2C_Mode;
+} i2c_status;
 
 
-void initI2C();
+void i2c_init();
 
 /* I2C Write and Read Function Declarations */
 
@@ -38,7 +35,7 @@ void initI2C();
  * *reg_data: The buffer to write
  * count: The length of *reg_data
  *  */
-I2C_Mode I2C_Master_WriteReg(uint8_t dev_addr, uint8_t reg_addr, uint8_t *reg_data, uint8_t count);
+i2c_status i2c_writeReg(uint8_t dev_addr, uint8_t reg_addr, uint8_t *reg_data, uint8_t count);
 
 /* For slave device with dev_addr, read the data specified in slaves reg_addr.
  * The received data is available in ReceiveBuffer
@@ -47,9 +44,9 @@ I2C_Mode I2C_Master_WriteReg(uint8_t dev_addr, uint8_t reg_addr, uint8_t *reg_da
  * reg_addr: The register or command to send to the slave.
  * count: The length of data to read
  *  */
-I2C_Mode I2C_Master_ReadReg(uint8_t dev_addr, uint8_t reg_addr, uint8_t count);
+i2c_status i2c_readReg(uint8_t dev_addr, uint8_t reg_addr, uint8_t count);
 
-void CopyArray(uint8_t *source, uint8_t *dest, uint8_t count);
+void copyArray(uint8_t *source, uint8_t *dest, uint8_t count);
 
 
 #endif
