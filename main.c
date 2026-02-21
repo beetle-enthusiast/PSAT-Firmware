@@ -1,129 +1,143 @@
+//******************************************************************************
+//   MSP430FR235x Demo - eUSCI_B0, I2C Master multiple byte TX/RX
+//
+//   Description: I2C master communicates to I2C slave sending and receiving
+//   3 different messages of different length. I2C master will enter LPM0 mode
+//   while waiting for the messages to be sent/receiving using I2C interrupt.
+//   ACLK = NA, MCLK = SMCLK = DCO 16MHz.
+//
+//                                     /|\ /|\
+//                   MSP430FR2355      4.7k |
+//                 -----------------    |  4.7k
+//            /|\ |             P1.3|---+---|-- I2C Clock (UCB0SCL)
+//             |  |                 |       |
+//             ---|RST          P1.2|-------+-- I2C Data (UCB0SDA)
+//                |                 |
+//                |                 |
+//                |                 |
+//                |                 |
+//                |                 |
+//                |                 |
+//
+//   Xiaodong Li
+//   Texas Instruments Inc.
+//   May 2020
+//   Built with CCS V9.2
+//******************************************************************************
 
-#include <driverlib.h>
+#include <msp430.h> 
+#include <stdint.h>
+#include <stdbool.h>
 #include <i2c.h>
 
-#include <stdint.h>
-#include <stdlib.h>
+//******************************************************************************
+// Pin Config ******************************************************************
+//******************************************************************************
+
+#define LED0_OUT    P1OUT
+#define LED0_DIR    P1DIR
+#define LED0_PIN    BIT0
+
+#define LED1_OUT    P6OUT
+#define LED1_DIR    P6DIR
+#define LED1_PIN    BIT6
+
+//******************************************************************************
+// Example Commands ************************************************************
+//******************************************************************************
+
+#define SLAVE_ADDR  0x76
+
+/* CMD_TYPE_X_SLAVE are example commands the master sends to the slave.
+ * The slave will send example SlaveTypeX buffers in response.
+ *
+ * CMD_TYPE_X_MASTER are example commands the master sends to the slave.
+ * The slave will initialize itself to receive MasterTypeX example buffers.
+ * */
+
+#define CMD_TYPE_0_SLAVE      0x00
+
+#define CMD_TYPE_0_MASTER      3
+
+#define TYPE_0_LENGTH   10
+
+#define MAX_BUFFER_SIZE     20
+
+/* MasterTypeX are example buffers initialized in the master, they will be
+ * sent by the master to the slave.
+ * SlaveTypeX are example buffers initialized in the slave, they will be
+ * sent by the slave to the master.
+ * */
 
 
-/* Global Variables */
-#if defined(__TI_COMPILER_VERSION__)
-#pragma PERSISTENT(mode)
-#elif defined(__IAR_SYSTEMS_ICC__)
-__persistent
-#endif
+uint8_t MasterType0 [TYPE_0_LENGTH] = { 11};
 
-uint8_t txBuffer[16] = {0xEE};
-
-/* Function Declarations */
-void init_GPIO();
-void init_CS();
-void init_UART();
-void init_I2C();
-
-/**
- * main.c
- */
-int main() {
-    /* Stop watchdog timer */
-    WDT_A_hold(WDT_A_BASE);
-
-    init_GPIO();
-    init_CS();
-    init_I2C();
-    // init_UART();
-    __bis_SR_register(GIE); // General interrupt enable
-
-    uint8_t i = 0;    
-    while(i < 16) {
-        I2C_transmit(0x76, 0x00, txBuffer);
-        __delay_cycles(800000UL * 1000);
-        i++;
-    }
-}
+uint8_t SlaveType0 [TYPE_0_LENGTH] = {0};
 
 
-void init_GPIO() {
-    /* Initialise all GPIO to output low for minimal LPM power consumption */
-    GPIO_setAsOutputPin(GPIO_PORT_PA, GPIO_PIN_ALL16);
-    GPIO_setAsOutputPin(GPIO_PORT_PB, GPIO_PIN_ALL16);
-    GPIO_setAsOutputPin(GPIO_PORT_PC, GPIO_PIN_ALL16);
-    GPIO_setAsOutputPin(GPIO_PORT_PD, GPIO_PIN_ALL16);
-    GPIO_setAsOutputPin(GPIO_PORT_PE, GPIO_PIN_ALL16);
-
-    GPIO_setOutputLowOnPin(GPIO_PORT_PA, GPIO_PIN_ALL16);
-    GPIO_setOutputLowOnPin(GPIO_PORT_PB, GPIO_PIN_ALL16);
-    GPIO_setOutputLowOnPin(GPIO_PORT_PC, GPIO_PIN_ALL16);
-    GPIO_setOutputLowOnPin(GPIO_PORT_PD, GPIO_PIN_ALL16);
-    GPIO_setOutputLowOnPin(GPIO_PORT_PE, GPIO_PIN_ALL16);
-
-    // Configure eUSCIB0 for I2C
-    P1SEL0 |= (1<<2)|(1<<3);    // P1.2 -> SDA, P1.3 -> SCL
-}
+//******************************************************************************
+// Device Initialization *******************************************************
+//******************************************************************************
 
 
-void init_CS() {
-    // Configure two FRAM waitstate as required by the device datasheet for MCLK
-    // operation beyond 8MHz before configuring the clock system.
-    FRCTL0 = FRCTLPW | NWAITS_2 ;
-
-    __bis_SR_register(SCG0);                    // disable FLL
-    CSCTL3 |= SELREF__REFOCLK;                  // Set REF0CLK as FLL reference source
-    CSCTL0 = 0;                                 // clear DCO and MOD registers
-    CSCTL1 = DCORSEL_3;                         // Set DCO = 24MHz
-    CSCTL2 = FLLD_0 + 243;                      // DCOCLKDIV = 24MHz
-    __delay_cycles(3);
-    __bic_SR_register(SCG0);                     // enable FLL
-    while(CSCTL7 & (FLLUNLOCK0 | FLLUNLOCK1));   // FLL locked
-
-    CSCTL4 = SELMS__DCOCLKDIV | SELA__REFOCLK;   // set REF0CLK (~32768Hz) as ACLK source, ACLK = 32768Hz
-                                                 // default DCOCLKDIV as MCLK and SMCLK source
-}
-
-
-// Initialise UART (Need to reconfigure clock timings)
-void init_UART() {
-    // Configure UCA1TXD and UCA1RXD
-    GPIO_setAsPeripheralModuleFunctionInputPin(GPIO_PORT_P4, GPIO_PIN2, GPIO_PRIMARY_MODULE_FUNCTION);
-    GPIO_setAsPeripheralModuleFunctionOutputPin(GPIO_PORT_P4, GPIO_PIN3, GPIO_PRIMARY_MODULE_FUNCTION);
-
-    // Configure UART
-    // ClockSource = SMCLK = 24MHz, Baudrate = 115200bps
-    // http://software-dl.ti.com/msp430/msp430_public_sw/mcu/msp430/MSP430BaudRateConverter/index.html
-    EUSCI_A_UART_initParam param = {0};
-    param.selectClockSource = EUSCI_A_UART_CLOCKSOURCE_SMCLK;
-    param.clockPrescalar = 13;
-    param.firstModReg = 0;
-    param.secondModReg = 37;
-    param.parity = EUSCI_A_UART_NO_PARITY;
-    param.msborLsbFirst = EUSCI_A_UART_LSB_FIRST;
-    param.numberofStopBits = EUSCI_A_UART_ONE_STOP_BIT;
-    param.uartMode = EUSCI_A_UART_MODE;
-    param.overSampling = EUSCI_A_UART_OVERSAMPLING_BAUDRATE_GENERATION;
-
-    if(STATUS_FAIL == EUSCI_A_UART_init(EUSCI_A1_BASE, &param)) {
-        return;
-    }
-
-    EUSCI_A_UART_enable(EUSCI_A1_BASE);
-
-    EUSCI_A_UART_clearInterrupt(EUSCI_A1_BASE,
-                                EUSCI_A_UART_RECEIVE_INTERRUPT);
-
-    // Enable USCI_A0 RX interrupt
-    EUSCI_A_UART_enableInterrupt(EUSCI_A1_BASE,
-                                 EUSCI_A_UART_RECEIVE_INTERRUPT);      // Enable interrupt
-}
-
-
-#if defined(__TI_COMPILER_VERSION__) || defined(__IAR_SYSTEMS_ICC__)
-#pragma vector=PORT2_VECTOR
-__interrupt void PORT2_ISR()
-#elif defined(__GNUC__)
-void __attribute__ ((interrupt(PORT2_VECTOR))) PORT2_ISR ()
-#else
-#error Compiler not supported!
-#endif
+void initGPIO()
 {
-    __bic_SR_register_on_exit(LPM3_bits);
+    //LEDs
+    LED0_OUT &= ~LED0_PIN;
+    LED0_DIR |= LED0_PIN;
+
+    LED1_OUT &= ~LED1_PIN;
+    LED1_DIR |= LED1_PIN;
+
+    // I2C pins
+    P1SEL0 |= BIT2 | BIT3;
+    P1SEL1 &= ~(BIT2 | BIT3);
+
+    // Disable the GPIO power-on default high-impedance mode to activate
+    // previously configured port settings
+    PM5CTL0 &= ~LOCKLPM5;
+}
+
+void initClockTo16MHz()
+{
+    // Configure one FRAM waitstate as required by the device datasheet for MCLK
+    // operation beyond 8MHz _before_ configuring the clock system.
+    FRCTL0 = FRCTLPW | NWAITS_1;
+
+    // Clock System Setup
+    __bis_SR_register(SCG0);                           // disable FLL
+    CSCTL3 |= SELREF__REFOCLK;                         // Set REFO as FLL reference source
+    CSCTL0 = 0;                                        // clear DCO and MOD registers
+    CSCTL1 &= ~(DCORSEL_7);                            // Clear DCO frequency select bits first
+    CSCTL1 |= DCORSEL_5;                               // Set DCO = 16MHz
+    CSCTL2 = FLLD_0 + 487;                             // DCOCLKDIV = 16MHz
+    __delay_cycles(3);
+    __bic_SR_register(SCG0);                           // enable FLL
+    while(CSCTL7 & (FLLUNLOCK0 | FLLUNLOCK1));         // FLL locked
+}
+
+
+//******************************************************************************
+// Main ************************************************************************
+// Send and receive three messages containing the example commands *************
+//******************************************************************************
+
+int main(void) {
+    WDTCTL = WDTPW | WDTHOLD;	// Stop watchdog timer
+    initClockTo16MHz();
+    initGPIO();
+    initI2C();
+
+    // // Configure BMP390 for pressure measurements in normal mode
+    // uint8_t pwr_cfg = 0x31;
+    // uint8_t osr = 0x01;
+
+    // I2C_Master_WriteReg(SLAVE_ADDR, 0x1B, &pwr_cfg, 1);
+    // I2C_Master_WriteReg(SLAVE_ADDR, 0x1C, &osr, 1);
+
+    I2C_Master_ReadReg(SLAVE_ADDR, CMD_TYPE_0_SLAVE, TYPE_0_LENGTH);
+    CopyArray(ReceiveBuffer, SlaveType0, TYPE_0_LENGTH);
+
+    // __bis_SR_register(LPM0_bits + GIE);
+	return 0;
 }
